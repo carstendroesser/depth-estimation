@@ -1,3 +1,5 @@
+import matplotlib
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras.callbacks as callbacks
 
@@ -29,8 +31,18 @@ batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
 
+print("Shape input: ", shape_input)
+print("Shape depthmp: ", shape_depthmap)
+
 # create model name out of params
 model_name = utils.concatenate_model_name(params)
+
+# notify start
+utils.send_update("Started training "
+                  + model_name,
+                  'carsten.droesser@gmail.com',
+                  mail_password,
+                  'carsten.droesser@gmail.com')
 
 # create dataset
 train_dataset, train_count, validation_dataset, validation_count = get_dataset(images_path=images_path,
@@ -50,7 +62,7 @@ model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scal
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
 # create early-stopping callback to auto-detect overfitting
-cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, mode='auto')
+cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, mode='auto')
 
 # create checkpoint callback to auto-save weights
 path_checkpoint = model_name + "/cp-{epoch:04d}.ckpt"
@@ -64,18 +76,19 @@ model.compile(optimizer=optimizer, loss=loss_fn)
 tf.keras.utils.plot_model(model, 'model.png', show_shapes=True)
 
 # start training
-#history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count // batch_size,
-#                    validation_data=validation_dataset, validation_steps=validation_count // batch_size,
-#                    callbacks=[cb_early_stopping, cb_checkpoint])
+history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count // batch_size,
+                    validation_data=validation_dataset, validation_steps=validation_count // batch_size,
+                    callbacks=[cb_early_stopping, cb_checkpoint])
 
 ## plot history
-#matplotlib.use('Agg')
-#plt.plot(history.history['loss'], label='train', color='tab:blue')
-#plt.plot(history.history['val_loss'], label='validation', color='tab:orange')
-#plt.legend()
-#plt.xlabel('epoch')
-#plt.ylabel('loss')
-#plt.savefig(model_name + '/train_and_val_loss.png', format='png')
+matplotlib.use('Agg')
+plt.plot(history.history['loss'], label='train', color='tab:blue')
+plt.plot(history.history['val_loss'], label='validation', color='tab:orange')
+plt.legend()
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.savefig(model_name + '/train_and_val_loss.png', format='png')
+
 #
 ## notify when finished
 utils.send_update("Training model "
