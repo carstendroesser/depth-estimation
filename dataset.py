@@ -25,7 +25,6 @@ def iterator(dictionary, max_depth, shape_input, shape_depthmap):
             resized_depthmap = cv2.resize(depthmap, (shape_depthmap[1], shape_depthmap[0]),
                                           interpolation=cv2.INTER_NEAREST)
             resized_depthmap = resized_depthmap / np.amax(resized_depthmap) * np.amax(depthmap)
-            resized_depthmap = resized_depthmap * (1. / max_depth)
             resized_depthmap = tf.expand_dims(resized_depthmap, -1)
 
             yield resized_img_array, resized_depthmap
