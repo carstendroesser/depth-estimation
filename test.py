@@ -1,3 +1,4 @@
+import os
 from tkinter import filedialog
 
 import cv2
@@ -12,6 +13,7 @@ from model import get_model
 # ask for paths
 path_config = filedialog.askopenfilename()
 path_ckpt = filedialog.askopenfilename()
+path_ckpt = "".join(os.path.splitext(path_ckpt)[:-1])
 path_img = filedialog.askopenfilename()
 
 # read params out of config file
@@ -50,10 +52,10 @@ model.load_weights(path_ckpt)
 
 prediction = model.predict(resized_img_array)
 prediction = prediction * max_depth
-# np.abs(prediction)
+np.abs(prediction)
 prediction = np.squeeze(prediction)
 prediction = np.clip(prediction, 0, max_depth)
 print("prediction ", prediction.shape)
-plt.imshow(prediction, cmap='gray', vmin=0, vmax=max_depth)
-plt.imshow(img_array)
+plt.imshow(prediction, cmap='Wistia', vmin=0, vmax=max_depth)
+# plt.imshow(img_array)
 plt.show()
