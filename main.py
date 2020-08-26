@@ -60,7 +60,7 @@ model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scal
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
 # create early-stopping callback to auto-detect overfitting
-#cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, mode='auto')
+# cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, mode='auto')
 
 # create checkpoint callback to auto-save weights
 path_checkpoint = model_name + "/cp-{epoch:04d}.ckpt"
