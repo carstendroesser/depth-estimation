@@ -52,10 +52,9 @@ model.load_weights(path_ckpt)
 
 prediction = model.predict(resized_img_array)
 prediction = prediction * max_depth
-np.abs(prediction)
+prediction = np.abs(prediction)
 prediction = np.squeeze(prediction)
 prediction = np.clip(prediction, 0, max_depth)
 print("prediction ", prediction.shape)
 plt.imshow(prediction, cmap='Wistia', vmin=0, vmax=max_depth)
-# plt.imshow(img_array)
 plt.show()
