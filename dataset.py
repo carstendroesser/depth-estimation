@@ -20,7 +20,8 @@ def iterator(dictionary, max_depth, shape_input, shape_depthmap):
             depthmap = yaml_file.getNode(
                 ("depthmap_" + os.path.splitext(os.path.basename(entry[1].decode("utf-8")))[0])).mat()
             yaml_file.release()
-            depthmap = np.clip(depthmap, 0.5, max_depth)
+            min_depth = 0.5
+            depthmap = np.clip(depthmap, min_depth, max_depth)
             resized_depthmap = cv2.resize(depthmap, (shape_depthmap[1], shape_depthmap[0]),
                                           interpolation=cv2.INTER_NEAREST)
             resized_depthmap = resized_depthmap / np.amax(resized_depthmap) * np.amax(depthmap)
