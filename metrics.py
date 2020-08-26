@@ -1,6 +1,7 @@
 import tensorflow.keras.backend as K
 from tensorflow.python.ops import math_ops
 
+# not in use yet
 
 # nan?!
 def silog(y_truth, y_predicted):
