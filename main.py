@@ -71,7 +71,8 @@ cb_checkpoint = callbacks.ModelCheckpoint(path_checkpoint, verbose=1, save_weigh
 model.compile(optimizer=optimizer, loss=loss_fn)
 
 # plot model
-tf.keras.utils.plot_model(model, 'model.png', show_shapes=True)
+os.mkdir(model_name)
+tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
 
 # start training
 history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count // batch_size,
