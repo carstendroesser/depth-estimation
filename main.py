@@ -9,8 +9,6 @@ from dataset import get_dataset
 from losses import loss_fn
 from model import get_model
 
-print("AHA", tf.__version__)
-
 # input password for email-updates
 mail_password = input("pw: ")
 
