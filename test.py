@@ -31,8 +31,6 @@ batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
 
-# create model name out of params
-model_name = utils.concatenate_model_name(params)
 
 # create model
 model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scale_extractor=multi_scale_extractor,
