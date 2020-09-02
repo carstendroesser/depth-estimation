@@ -61,7 +61,7 @@ model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scal
 # create optimizer
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
-# create early-stopping callback to auto-detect overfitting
+# unused: create early-stopping callback to auto-detect overfitting
 # cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, mode='auto')
 
 # create checkpoint callback to auto-save weights
@@ -81,7 +81,7 @@ history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count 
                     validation_data=validation_dataset, validation_steps=validation_count // batch_size,
                     callbacks=[cb_checkpoint])
 
-## plot history
+# plot history
 matplotlib.use('Agg')
 plt.plot(history.history['loss'], label='train', color='tab:blue')
 plt.plot(history.history['val_loss'], label='validation', color='tab:orange')
@@ -90,8 +90,7 @@ plt.xlabel('epoch')
 plt.ylabel('loss')
 plt.savefig(model_name + '/train_and_val_loss.png', format='png')
 
-#
-## notify when finished
+# notify when finished
 utils.send_update("Training model "
                   + model_name
                   + " finished. ",
