@@ -1,24 +1,44 @@
-import tensorflow.keras.backend as K
-from tensorflow.python.ops import math_ops
-
-# not in use yet
-
-# nan?!
-def silog(y_truth, y_predicted):
-    err = K.log(y_predicted) - K.log(y_truth)
-    err = K.sqrt(K.mean(err ** 2) - K.mean(err) ** 2) * 100
-    return err
+import numpy as np
 
 
-# nan?!
-def rmse_log(y_truth, y_predicted):
-    error = (K.log(y_truth) - K.log(y_predicted)) ** 2
-    return K.sqrt(K.mean(error))
-
-
+# absolute relative error
 def rel_abs(y_truth, y_predicted):
-    return K.mean(math_ops.div_no_nan(K.abs(y_truth - y_predicted), y_truth))
+    return np.mean(np.abs(y_truth - y_predicted) / y_truth)
 
 
-def rel_sq(y_truth, y_predicted):
-    return K.mean(math_ops.div_no_nan(((y_truth - y_predicted) ** 2), y_truth))
+# squared relative error
+def rel_squared(y_truth, y_predicted):
+    return np.mean(np.divide(((y_truth - y_predicted) ** 2), y_truth))
+
+
+# root mean squared error
+def rmse(y_truth, y_predicted):
+    rmse = (y_truth - y_predicted) ** 2
+    return np.sqrt(np.mean(rmse))
+
+
+# average log10 error
+def log10(y_truth, y_predicted):
+    return (np.abs(np.log10(y_truth) - np.log10(y_predicted))).mean()
+
+
+# thresholded accuracy
+def thresholded_accuracy(y_truth, y_predicted):
+    t = np.maximum((y_truth / y_predicted), (y_predicted / y_truth))
+    return (t < 1.25).mean(), (t < 1.25 ** 2).mean(), (t < 1.25 ** 3).mean()
+
+
+# silog
+def silog(y_truth, y_predicted):
+    error = np.log(y_predicted) - np.log(y_truth)
+    return np.sqrt(np.mean(error ** 2) - np.mean(error) ** 2) * 100
+
+
+def metrics(y_truth, y_predicted):
+    e1 = rel_abs(y_truth, y_predicted)
+    e2 = rel_squared(y_truth, y_predicted)
+    e3 = rmse(y_truth, y_predicted)
+    e4 = log10(y_truth, y_predicted)
+    e5a, e5b, e5c = thresholded_accuracy(y_truth, y_predicted)
+    e6 = silog(y_truth, y_predicted)
+    return [e1, e2, e3, e4, e5a, e5b, e5c, e6]
