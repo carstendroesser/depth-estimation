@@ -11,9 +11,7 @@ def iterator(dictionary, max_depth, shape_input, shape_depthmap):
         for entry in dictionary:
             # image
             img_array = cv2.imread(entry[0].decode("utf-8"))
-            resized_img_array = cv2.resize(img_array, (shape_input[1], shape_input[0]), interpolation=cv2.INTER_NEAREST)
-            resized_img_array = cv2.cvtColor(resized_img_array, cv2.COLOR_BGR2RGB)
-            resized_img_array = tf.cast(resized_img_array, tf.float32) * (1. / 255.0)
+            resized_img_array = prepare_image(img_array, shape_input)
 
             # depthmap
             yaml_file = cv2.FileStorage(entry[1].decode("utf-8"), cv2.FILE_STORAGE_READ)
@@ -74,3 +72,9 @@ def get_dataset(images_path, yamls_path, max_depth, shape_input, shape_depthmap,
     validation_count = len(validation_dictionary)
 
     return train_dataset, train_count, validation_dataset, validation_count
+
+
+def prepare_image(image, shape_input):
+    resized_img_array = cv2.resize(image, (shape_input[1], shape_input[0]), interpolation=cv2.INTER_NEAREST)
+    resized_img_array = cv2.cvtColor(resized_img_array, cv2.COLOR_BGR2RGB)
+    return tf.cast(resized_img_array, tf.float32) * (1. / 255.0)
