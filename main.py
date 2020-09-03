@@ -31,9 +31,6 @@ batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
 
-print("Shape input: ", shape_input)
-print("Shape depthmp: ", shape_depthmap)
-
 # create model name out of params
 model_name = utils.concatenate_model_name(params)
 
