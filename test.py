@@ -1,7 +1,9 @@
 import os
+import time
 from tkinter import filedialog
 
 import numpy as np
+import tensorflow.keras.backend as K
 
 import utils
 from config_reader import read_config_file
@@ -31,7 +33,6 @@ batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
 
-
 # create model
 model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scale_extractor=multi_scale_extractor,
                   dilation_rates=dilation_rates, skip_connections=skip_connections, decoder_steps=decoder_steps,
@@ -49,38 +50,63 @@ validation_dataset, validation_count = get_dataset(images_path=images_path,
                                                    batch_size=batch_size,
                                                    validation_split=0.2)[-2:]
 
-i = 0
-print("validation count: ", validation_count)
 
+# track time
+time_start = time.time()
+
+test = True
 errors = []
 
 for element in validation_dataset:
-    if not i < 3:
+    predictions = model.predict(element[0], batch_size=batch_size)
+    predictions = max_depth / predictions
+    predictions = np.clip(predictions, 0.5, max_depth)
+
+    y_truth = max_depth / element[1]
+    errors.append(metrics(y_truth, predictions))
+
+    if test is True:
         break
 
-    i = i + 1
+time_finish = time.time()
+time_elapsed = time_finish - time_start
 
-    print("shape of gt: ", element[1].shape)
+errors = np.stack(errors, axis=0)
+errors = np.mean(errors, axis=0)
+errors = np.round(errors, 3)
 
-    # predict n = batch_size images
-    predictions = model.predict(element[0], batch_size=batch_size)
-    predictions = predictions * max_depth
-    predictions = np.abs(predictions)
-    predictions = np.clip(predictions, 0, max_depth)
-    errors.append(metrics(element[1], predictions))
+# count params, ctrl+c/v from source: https://stackoverflow.com/a/58894981/1478054
+count_trainable = np.sum([K.count_params(w) for w in model.trainable_weights])
+count_non_trainable = np.sum([K.count_params(w) for w in model.non_trainable_weights])
 
-mean = np.mean(np.stack(errors, axis=0), axis=0)
-print("MEAN errors: ", mean)
+print('----------------')
+print('Summary for ', utils.concatenate_model_name(params))
+print('Evaluation of', validation_count * batch_size, 'images took',
+      time.strftime("%H:%M:%S", time.gmtime(time_elapsed)))
+print('---- Params: ----------------')
+print('total: {:,}'.format(count_trainable + count_non_trainable))
+print('trainable: {:,}'.format(count_trainable))
+print('non-trainable: {:,}'.format(count_non_trainable))
+print('---- Errors: ----------------')
+print("rel_abs:", '{:.3f}'.format(errors[0]))
+print("rel_squared:", '{:.3f}'.format(errors[1]))
+print("rmse:", '{:.3f}'.format(errors[2]))
+print("rmse_log:", '{:.3f}'.format(errors[3]))
+print("log10:", '{:.3f}'.format(errors[4]))
+print("acc1:", '{:.3f}'.format(errors[5]))
+print("acc2:", '{:.3f}'.format(errors[6]))
+print("acc3:", '{:.3f}'.format(errors[7]))
 
-# for single prediction use only:
-# path_img = filedialog.askopenfilename()
-# image = cv2.imread(path_img)
-# image = prepare_image(image, shape_input)
-# image = tf.expand_dims(image, axis=0)
-# prediction = model.predict(image)
-# prediction = prediction * max_depth
-# prediction = np.abs(prediction)
+# single image use only:
+# prediction = model.predict(resized_img_array)
+# prediction = (max_depth)/prediction
 # prediction = np.squeeze(prediction)
-# prediction = np.clip(prediction, 0, max_depth)
-# plt.imshow(prediction, cmap='Wistia', vmin=0, vmax=max_depth)
+# prediction = np.clip(prediction, 0.5, max_depth)
+# print("aha", prediction)
+# print("aha", np.amax(prediction))
+# plt.imshow(prediction, cmap='plasma', vmin=0, vmax=max_depth)
+##plt.imshow(prediction, cmap='Greys', vmin=0, vmax=np.amax(prediction))
+# plt.colorbar()
+# plt.title(model_name, fontdict = {'fontsize' : 8})
+##plt.imshow(img_array)
 # plt.show()
