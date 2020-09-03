@@ -2,6 +2,16 @@ import smtplib
 import ssl
 
 
+def crop_center(array, crop_y, crop_x):
+    if len(array.shape) != 4:
+        raise Exception('Bad shape: input has to be a batch of 3D data')
+    y = array.shape[1]
+    x = array.shape[2]
+    start_x = x // 2 - (crop_x // 2)
+    start_y = y // 2 - (crop_y // 2)
+    return array[:, start_y:start_y + crop_y, start_x:start_x + crop_x, :]
+
+
 def concatenate_model_name(params):
     model_name = params[3] + '_' \
                  + params[4] + '_' + params[5] + '_' + params[6] + '_' + params[7] + '_' \
