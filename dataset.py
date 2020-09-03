@@ -26,8 +26,8 @@ def iterator(dictionary, max_depth, shape_input, shape_depthmap):
             # scale back to highest depth after interpolation
             resized_depthmap = resized_depthmap / np.amax(resized_depthmap) * np.amax(depthmap)
 
-            # inverse depth [cm], [50cm; max_depth*100cm]
-            resized_depthmap = (max_depth * 100.0) / np.clip(resized_depthmap * 100, min_depth * 100, max_depth * 100.0)
+            # inverse depth [ratio], [0,5m; max_depth]
+            resized_depthmap = (max_depth) / np.clip(resized_depthmap, min_depth, max_depth)
 
             resized_depthmap = tf.expand_dims(resized_depthmap, -1)
 
