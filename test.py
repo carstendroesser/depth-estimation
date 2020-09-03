@@ -38,6 +38,13 @@ batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
 
+# create identifying model_name
+model_name = utils.concatenate_model_name(params)
+
+# create folder to save summary and plots
+if not os.path.exists(model_name):
+    os.mkdir(model_name)
+
 # create model
 model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scale_extractor=multi_scale_extractor,
                   dilation_rates=dilation_rates, skip_connections=skip_connections, decoder_steps=decoder_steps,
