@@ -62,23 +62,56 @@ validation_dataset, validation_count = get_dataset(images_path=images_path,
                                                    batch_size=batch_size,
                                                    validation_split=0.2)[-2:]
 
-
 # track time
 time_start = time.time()
 
-test = True
+batches_to_plot = [12, 32, 62, 81]
 errors = []
 
+i = 0
+j = 0
+
 for element in validation_dataset:
+    print("Processing batch", str(i), "of", str(validation_count // batch_size))
     predictions = model.predict(element[0], batch_size=batch_size)
+
+    # prevent division by zero
+    predictions = np.clip(predictions, 1.0, np.amax(predictions))
     predictions = max_depth / predictions
     predictions = np.clip(predictions, 0.5, max_depth)
 
     y_truth = max_depth / element[1]
+
+    # crop
+    images = utils.crop_center(element[0], (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
+    predictions = utils.crop_center(predictions, (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
+    y_truth = utils.crop_center(y_truth, (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
+
     errors.append(metrics(y_truth, predictions))
 
-    if test is True:
-        break
+    if i in batches_to_plot:
+        figure, axarr = plt.subplots(batch_size, 3)
+
+        axarr[0, 0].set_title('Image', fontdict={'fontsize': 8})
+        axarr[0, 1].set_title('Ground Truth', fontdict={'fontsize': 8})
+        axarr[0, 2].set_title('Predicted', fontdict={'fontsize': 8})
+
+        k = 0
+        for image, pred, gt in zip(images, predictions, y_truth):
+            axarr[k, 0].imshow(np.squeeze(image))
+            axarr[k, 0].axis('off')
+            axarr[k, 1].imshow(np.squeeze(gt), cmap='plasma', vmin=0.5, vmax=max_depth)
+            axarr[k, 1].axis('off')
+            axarr[k, 2].imshow(np.squeeze(pred), cmap='plasma', vmin=0.5, vmax=max_depth)
+            axarr[k, 2].axis('off')
+            k = k + 1
+
+        figure.suptitle(model_name, fontsize=8)
+        plt.savefig('{}/batched_comparison_{}.png'.format(model_name, j), format='png', dpi=300)
+        plt.show(dpi=300)
+        j = j + 1
+
+    i = i + 1
 
 time_finish = time.time()
 time_elapsed = time_finish - time_start
