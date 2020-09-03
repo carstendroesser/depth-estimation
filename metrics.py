@@ -13,8 +13,7 @@ def rel_squared(y_truth, y_predicted):
 
 # root mean squared error
 def rmse(y_truth, y_predicted):
-    rmse = (y_truth - y_predicted) ** 2
-    return np.sqrt(np.mean(rmse))
+    return np.sqrt(np.mean((y_truth - y_predicted) ** 2))
 
 
 # average log10 error
@@ -28,17 +27,17 @@ def thresholded_accuracy(y_truth, y_predicted):
     return (t < 1.25).mean(), (t < 1.25 ** 2).mean(), (t < 1.25 ** 3).mean()
 
 
-# silog
-def silog(y_truth, y_predicted):
-    error = np.log(y_predicted) - np.log(y_truth)
-    return np.sqrt(np.mean(error ** 2) - np.mean(error) ** 2) * 100
+# rmse log
+def rmse_log(y_truth, y_predicted):
+    error = (np.log(y_truth) - np.log(y_predicted)) ** 2
+    return np.sqrt(error.mean())
 
 
 def metrics(y_truth, y_predicted):
     e1 = rel_abs(y_truth, y_predicted)
     e2 = rel_squared(y_truth, y_predicted)
     e3 = rmse(y_truth, y_predicted)
-    e4 = log10(y_truth, y_predicted)
-    e5a, e5b, e5c = thresholded_accuracy(y_truth, y_predicted)
-    e6 = silog(y_truth, y_predicted)
-    return [e1, e2, e3, e4, e5a, e5b, e5c, e6]
+    e4 = rmse_log(y_truth, y_predicted)
+    e5 = log10(y_truth, y_predicted)
+    e6a, e6b, e6c = thresholded_accuracy(y_truth, y_predicted)
+    return [e1, e2, e3, e4, e5, e6a, e6b, e6c]
