@@ -2,6 +2,8 @@ import os
 import time
 from tkinter import filedialog
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow.keras.backend as K
 
@@ -10,6 +12,9 @@ from config_reader import read_config_file
 from dataset import get_dataset
 from metrics import metrics
 from model import get_model
+
+# increase default dpi for plots
+mpl.rcParams['figure.dpi'] = 300
 
 # ask for paths
 path_config = filedialog.askopenfilename()
