@@ -88,6 +88,7 @@ plt.plot(history.history['val_loss'], label='validation', color='tab:orange')
 plt.legend()
 plt.xlabel('epoch')
 plt.ylabel('loss')
+plt.title(model_name, fontdict={'fontsize': 8})
 plt.savefig(model_name + '/train_and_val_loss.png', format='png')
 
 # notify when finished
