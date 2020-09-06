@@ -49,9 +49,13 @@ def get_model(shape_input, base_encoder, multi_scale_extractor, dilation_rates, 
     elif decoder_steps == 'double_step':
         decoder = upsampling(factor_h=2, factor_w=2, filtercount=decoder.shape[-1] / 2, append_to=decoder)
         decoder = upsampling(factor_h=4, factor_w=4, filtercount=decoder.shape[-1] / 2, append_to=decoder)
+    elif decoder_steps == 'triple_step':
+        decoder = upsampling(factor_h=2, factor_w=2, filtercount=decoder.shape[-1] / 2, append_to=decoder)
+        decoder = upsampling(factor_h=2, factor_w=2, filtercount=decoder.shape[-1] / 2, append_to=decoder)
+        decoder = upsampling(factor_h=2, factor_w=2, filtercount=decoder.shape[-1] / 2, append_to=decoder)
     else:
         raise Exception(
-            "No valid argument for decoder_steps. decoder_steps has to be one of [single_step, double_step]")
+            "No valid argument for decoder_steps. decoder_steps has to be one of [single_step, double_step, triple_step]")
 
     # depth output layer
     decoder = layers.Conv2D(filters=1, kernel_size=(3, 3), strides=(1, 1), padding='same')(decoder)
