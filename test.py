@@ -83,9 +83,9 @@ for element in validation_dataset:
     y_truth = max_depth / element[1]
 
     # crop
-    images = utils.crop_center(element[0], (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
-    predictions = utils.crop_center(predictions, (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
-    y_truth = utils.crop_center(y_truth, (shape_input[0] // 8) * 7, (shape_input[1] // 8) * 7)
+    images = utils.crop_center(element[0], (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    predictions = utils.crop_center(predictions, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    y_truth = utils.crop_center(y_truth, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
 
     errors.append(metrics(y_truth, predictions))
 
@@ -111,7 +111,10 @@ for element in validation_dataset:
         plt.show(dpi=300)
         j = j + 1
 
-    i = i + 1
+    if i < (validation_count // batch_size):
+        i = i + 1
+    else:
+        break
 
 time_finish = time.time()
 time_elapsed = time_finish - time_start
