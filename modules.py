@@ -29,6 +29,8 @@ def create_densenet_block(append_to, conv_filters):
     return out
 
 
+double_block = True
+
 def densenet_module(append_to):
     encoder = tf.keras.layers.ZeroPadding2D(padding=(3, 3))(append_to)
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2)(encoder)
@@ -44,12 +46,21 @@ def densenet_module(append_to):
     dense_module = create_densenet_block(dense_module, 32)
     dense_module = create_densenet_block(dense_module, 32)
 
-    transition_module = tf.keras.layers.BatchNormalization()(dense_module)
-    transition_module = tf.keras.layers.ReLU()(transition_module)
-    transition_module = tf.keras.layers.Conv2D(filters=128, kernel_size=(1, 1), strides=1, padding='same')(
-        transition_module)
-    transition_module = tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(transition_module)
-    return transition_module
+    dense_module = tf.keras.layers.BatchNormalization()(dense_module)
+    dense_module = tf.keras.layers.ReLU()(dense_module)
+    dense_module = tf.keras.layers.Conv2D(filters=128, kernel_size=(1, 1), strides=1, padding='same')(
+        dense_module)
+    dense_module = tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(dense_module)
+
+    if double_block:
+        for i in range(12):
+            dense_module = create_densenet_block(dense_module, 32)
+
+        dense_module = tf.keras.layers.BatchNormalization()(dense_module)
+        dense_module = tf.keras.layers.ReLU()(dense_module)
+        dense_module = tf.keras.layers.Conv2D(filters=256, kernel_size=(1, 1), strides=1, padding='same')(dense_module)
+
+    return dense_module
 
 
 def create_resnet_block(append_to, output_filter_count, parallel_conv):
