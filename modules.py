@@ -18,49 +18,70 @@ def vgg_module(append_to):
     return out
 
 
-def create_densenet_block(append_to, conv_filters):
-    out = tf.keras.layers.BatchNormalization()(append_to)
-    out = tf.keras.layers.ReLU()(out)
-    out = tf.keras.layers.Conv2D(filters=128, kernel_size=1, strides=1)(out)
-    out = tf.keras.layers.BatchNormalization()(out)
-    out = tf.keras.layers.ReLU()(out)
-    out = tf.keras.layers.Conv2D(filters=conv_filters, kernel_size=(3, 3), strides=1, padding='same')(out)
-    out = tf.keras.layers.concatenate([append_to, out])
-    return out
+def densenet_bottleneck(append_to):
+        out = tf.keras.layers.BatchNormalization()(append_to)
+        out = tf.keras.layers.ReLU()(out)
+        out = tf.keras.layers.Conv2D(filters=128, kernel_size=1, strides=1)(out)
+        out = tf.keras.layers.Dropout(rate=0.2)(out)
+        out = tf.keras.layers.BatchNormalization()(out)
+        out = tf.keras.layers.ReLU()(out)
+        out = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), strides=1, padding='same')(out)
+        return tf.keras.layers.Dropout(rate=0.2)(out)
 
 
-double_block = True
+def densenet_transition(append_to, downsample):
+    append_to = tf.keras.layers.BatchNormalization()(append_to)
+    append_to = tf.keras.layers.ReLU()(append_to)
+    append_to = tf.keras.layers.Conv2D(filters=append_to.shape[-1]//2, kernel_size=(1, 1), strides=1, padding='same')(
+        append_to)
+    append_to = tf.keras.layers.Dropout(rate=0.2)(append_to)
+
+    if downsample is True:
+        return tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(append_to)
+    else:
+        return append_to
+
+
+
+def densenet_block(append_to, count_layers):
+    layers_to_concat = list()
+    layers_to_concat.append(append_to)
+
+    out = densenet_bottleneck(append_to=append_to)
+    layers_to_concat.append(out)
+
+    for i in range(count_layers-1):
+        out = tf.concat(layers_to_concat, axis=3)
+        out = densenet_bottleneck(out)
+        layers_to_concat.append(out)
+
+    return tf.concat(layers_to_concat, axis=3)
+
 
 def densenet_module(append_to):
+    # header
     encoder = tf.keras.layers.ZeroPadding2D(padding=(3, 3))(append_to)
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2)(encoder)
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
-    encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
-    encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
+    #encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
+    #encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
 
-    dense_module = create_densenet_block(encoder, 32)
-    dense_module = create_densenet_block(dense_module, 32)
-    dense_module = create_densenet_block(dense_module, 32)
-    dense_module = create_densenet_block(dense_module, 32)
-    dense_module = create_densenet_block(dense_module, 32)
-    dense_module = create_densenet_block(dense_module, 32)
+    # denseblock 1
+    encoder = densenet_block(append_to=encoder, count_layers=6)
+    encoder = densenet_transition(append_to=encoder, downsample=True)
 
-    dense_module = tf.keras.layers.BatchNormalization()(dense_module)
-    dense_module = tf.keras.layers.ReLU()(dense_module)
-    dense_module = tf.keras.layers.Conv2D(filters=128, kernel_size=(1, 1), strides=1, padding='same')(
-        dense_module)
-    dense_module = tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(dense_module)
+    #denseblock 2
+    encoder = densenet_block(append_to=encoder, count_layers=12)
+    encoder = densenet_transition(append_to=encoder, downsample=True)
 
-    if double_block:
-        for i in range(12):
-            dense_module = create_densenet_block(dense_module, 32)
+    #denseblock 3
+    encoder = densenet_block(append_to=encoder, count_layers=32)
+    encoder = densenet_transition(append_to=encoder, downsample=False)
 
-        dense_module = tf.keras.layers.BatchNormalization()(dense_module)
-        dense_module = tf.keras.layers.ReLU()(dense_module)
-        dense_module = tf.keras.layers.Conv2D(filters=256, kernel_size=(1, 1), strides=1, padding='same')(dense_module)
+    #-> input downsampled to 1/8
 
-    return dense_module
+    return encoder
 
 
 def create_resnet_block(append_to, output_filter_count, parallel_conv):
