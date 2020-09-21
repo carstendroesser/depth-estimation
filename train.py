@@ -72,7 +72,7 @@ model.compile(optimizer=optimizer, loss=loss_fn)
 
 # plot model
 os.mkdir(model_name)
-tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
+#tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
 
 # copy config-file
 shutil.copyfile('model.cfg', model_name + "/model.cfg")
