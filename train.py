@@ -1,5 +1,6 @@
 import os
 import shutil
+from tkinter import filedialog
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -12,8 +13,12 @@ from dataset import get_dataset
 from losses import loss_fn
 from model import get_model
 
+# train from scratch oder continue training of an existing model?
+CONTINUE_TRAINING = False
+
+
 # input password for email-updates
-mail_password = input("pw: ")
+mail_password = input("pw:")
 
 # read params out of config file
 params = read_config_file("model.cfg")
@@ -33,7 +38,11 @@ learning_rate = float(params[15])
 regularization = params[16]
 
 # create model name out of params
-model_name = utils.concatenate_model_name(params)
+
+if CONTINUE_TRAINING:
+    model_name = utils.concatenate_model_name(params) + '_continued'
+else:
+    model_name = utils.concatenate_model_name(params)
 
 # notify start
 utils.send_update("Started training "
@@ -69,6 +78,13 @@ cb_checkpoint = callbacks.ModelCheckpoint(path_checkpoint, verbose=1, save_weigh
 
 # compile model
 model.compile(optimizer=optimizer, loss=loss_fn)
+
+# continue training?
+if CONTINUE_TRAINING:
+    path_config = filedialog.askopenfilename()
+    path_ckpt = filedialog.askopenfilename()
+    path_ckpt = "".join(os.path.splitext(path_ckpt)[:-1])
+    model.load_weights(path_ckpt)
 
 # plot model
 if not os.path.exists(model_name):
