@@ -74,6 +74,8 @@ model.compile(optimizer=optimizer, loss=loss_fn)
 if not os.path.exists(model_name):
     os.mkdir(model_name)
 #   tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
+else:
+    raise Exception("Path does already exist")
 
 # copy config-file
 shutil.copyfile('model.cfg', model_name + "/model.cfg")
