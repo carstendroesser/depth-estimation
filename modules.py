@@ -12,9 +12,9 @@ def vgg_module(append_to):
     out = tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding="same", activation="relu")(out)
     out = tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding="same", activation="relu")(out)
     out = tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2))(out)
-    # out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
-    # out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
-    # out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
+    out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
+    out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
+    out = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu")(out)
     return out
 
 
@@ -64,6 +64,7 @@ def densenet_module(append_to):
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2)(encoder)
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
+    # removed to prevent too much downsampling
     #encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
     #encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
 
@@ -76,6 +77,8 @@ def densenet_module(append_to):
     encoder = densenet_transition(append_to=encoder, downsample=True)
 
     #denseblock 3
+    # depending on the depth of densenet, this densenet_block has another count of layers, e.g. 24
+    # chosen 32 because of "go deep, not wide"
     encoder = densenet_block(append_to=encoder, count_layers=32)
     encoder = densenet_transition(append_to=encoder, downsample=False)
 
@@ -84,20 +87,25 @@ def densenet_module(append_to):
     return encoder
 
 
-def create_resnet_block(append_to, output_filter_count, parallel_conv):
-    left = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), strides=1, padding='same')(append_to)
-    left = tf.keras.layers.BatchNormalization()(left)
-    left = tf.keras.layers.ReLU()(left)
-    left = tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), strides=1, padding='same')(left)
-    left = tf.keras.layers.BatchNormalization()(left)
-    left = tf.keras.layers.ReLU()(left)
-    left = tf.keras.layers.Conv2D(filters=output_filter_count, kernel_size=(3, 3), strides=1, padding='same')(left)
-    left = tf.keras.layers.BatchNormalization()(left)
+def create_resnet_block(append_to, filters, downsample=False):
+    if downsample:
+        stride = 2
+        identity_kernel_size = 3
+    else:
+        identity_kernel_size = 1
+        stride = 1
 
-    if parallel_conv:
-        append_to = tf.keras.layers.Conv2D(filters=output_filter_count, kernel_size=(3, 3), strides=1, padding='same')(
-            append_to)
-        append_to = tf.keras.layers.BatchNormalization()(append_to)
+    left = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), strides=stride, padding='same')(append_to)
+    left = tf.keras.layers.BatchNormalization()(left)
+    left = tf.keras.layers.ReLU()(left)
+
+
+    left = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), strides=1, padding='same')(left)
+    left = tf.keras.layers.BatchNormalization()(left)
+    left = tf.keras.layers.ReLU()(left)
+
+    append_to = tf.keras.layers.Conv2D(filters=filters, kernel_size=(identity_kernel_size, identity_kernel_size), strides=stride, padding='same')(append_to)
+    append_to = tf.keras.layers.BatchNormalization()(append_to)
 
     output = tf.keras.layers.add([left, append_to])
     output = tf.keras.layers.Activation(activation='relu')(output)
@@ -111,32 +119,28 @@ def resnet_module(append_to):
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=(2, 2), padding='valid')(encoder)
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
-    encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
-    encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
+    # left out to prevent from too much downsampling
+    #encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
+    #encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
 
-    # block1
-    encoder = create_resnet_block(encoder, output_filter_count=256, parallel_conv=True)
-    encoder = create_resnet_block(encoder, output_filter_count=256, parallel_conv=False)
-    encoder = create_resnet_block(encoder, output_filter_count=256, parallel_conv=False)
+    # block 1
+    encoder = create_resnet_block(encoder, filters=64, downsample=True)
+    encoder = create_resnet_block(encoder, filters=64)
+    encoder = create_resnet_block(encoder, filters=64)
 
-    # block2
-    left = tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(2, 2), padding='same')(encoder)
-    left = tf.keras.layers.BatchNormalization()(left)
-    left = tf.keras.layers.ReLU()(left)
-    left = tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding='same')(left)
-    left = tf.keras.layers.BatchNormalization()(left)
-    left = tf.keras.layers.ReLU()(left)
-    left = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), strides=(1, 1), padding='same')(left)
-    left = tf.keras.layers.BatchNormalization()(left)
+    # block 2
+    encoder = create_resnet_block(encoder, filters=128, downsample=True)
+    encoder = create_resnet_block(encoder, filters=128)
+    encoder = create_resnet_block(encoder, filters=128)
+    encoder = create_resnet_block(encoder, filters=128)
 
-    right = tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), strides=(2, 2), padding='same')(encoder)
-    right = tf.keras.layers.BatchNormalization()(right)
-
-    encoder = tf.keras.layers.add([left, right])
-    encoder = tf.keras.layers.ReLU()(encoder)
-
-    # downscaling to 128 filters. not part of usual ResNet
-    encoder = tf.keras.layers.Conv2D(filters=128, kernel_size=(1, 1), strides=(1, 1), padding='same')(encoder)
+    # block 3
+    encoder = create_resnet_block(encoder, filters=256)
+    encoder = create_resnet_block(encoder, filters=256)
+    encoder = create_resnet_block(encoder, filters=256)
+    encoder = create_resnet_block(encoder, filters=256)
+    encoder = create_resnet_block(encoder, filters=256)
+    encoder = create_resnet_block(encoder, filters=256)
 
     return encoder
 
