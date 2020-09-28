@@ -198,4 +198,7 @@ def upsampling(factor_h, factor_w, filtercount, append_to):
     up = tf.keras.layers.Conv2D(filtercount, kernel_size=(3, 3), strides=1, padding='same')(up)
     up = tf.keras.layers.LeakyReLU(alpha=0.2)(up)
     up = tf.keras.layers.BatchNormalization()(up)
+    up = tf.keras.layers.Conv2D(filtercount, kernel_size=(3, 3), strides=1, padding='same')(up)
+    up = tf.keras.layers.LeakyReLU(alpha=0.2)(up)
+    up = tf.keras.layers.BatchNormalization()(up)
     return up
