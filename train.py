@@ -16,7 +16,6 @@ from model import get_model
 # train from scratch oder continue training of an existing model?
 CONTINUE_TRAINING = False
 
-
 # input password for email-updates
 mail_password = input("pw:")
 
@@ -36,6 +35,7 @@ epochs = int(params[13])
 batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
+min_depth = float(params[17])
 
 # create model name out of params
 
@@ -55,6 +55,7 @@ utils.send_update("Started training "
 train_dataset, train_count, validation_dataset, validation_count = get_dataset(images_path=images_path,
                                                                                yamls_path=yamls_path,
                                                                                max_depth=max_depth,
+                                                                               min_depth=min_depth,
                                                                                shape_input=shape_input,
                                                                                shape_depthmap=shape_depthmap,
                                                                                batch_size=batch_size,
