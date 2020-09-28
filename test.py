@@ -37,6 +37,7 @@ epochs = int(params[13])
 batch_size = int(params[14])
 learning_rate = float(params[15])
 regularization = params[16]
+min_depth = float(params[17])
 
 # create identifying model_name
 model_name = utils.concatenate_model_name(params)
@@ -57,6 +58,7 @@ model.load_weights(path_ckpt)
 validation_dataset, validation_count = get_dataset(images_path=images_path,
                                                    yamls_path=yamls_path,
                                                    max_depth=max_depth,
+                                                   min_depth=min_depth,
                                                    shape_input=shape_input,
                                                    shape_depthmap=shape_depthmap,
                                                    batch_size=batch_size,
@@ -76,9 +78,8 @@ for element in validation_dataset:
     predictions = model.predict(element[0], batch_size=batch_size)
 
     # prevent division by zero
-    predictions = np.clip(predictions, 1.0, np.amax(predictions))
     predictions = max_depth / predictions
-    predictions = np.clip(predictions, 0.5, max_depth)
+    predictions = np.clip(predictions, min_depth, max_depth)
 
     y_truth = max_depth / element[1]
 
@@ -100,9 +101,9 @@ for element in validation_dataset:
         for image, pred, gt in zip(images, predictions, y_truth):
             axarr[k, 0].imshow(np.squeeze(image))
             axarr[k, 0].axis('off')
-            axarr[k, 1].imshow(np.squeeze(gt), cmap='plasma', vmin=0.5, vmax=max_depth)
+            axarr[k, 1].imshow(np.squeeze(gt), cmap='plasma', vmin=min_depth, vmax=max_depth)
             axarr[k, 1].axis('off')
-            axarr[k, 2].imshow(np.squeeze(pred), cmap='plasma', vmin=0.5, vmax=max_depth)
+            axarr[k, 2].imshow(np.squeeze(pred), cmap='plasma', vmin=min_depth, vmax=max_depth)
             axarr[k, 2].axis('off')
             k = k + 1
 
