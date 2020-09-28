@@ -81,7 +81,7 @@ def densenet_module(append_to):
     # denseblock 3
     # depending on the depth of densenet, this densenet_block has another count of layers, e.g. 24
     # chosen 32 because of "go deep, not wide"
-    encoder = densenet_block(append_to=encoder, count_layers=32)
+    encoder = densenet_block(append_to=encoder, count_layers=48)
     encoder = densenet_transition(append_to=encoder, downsample=False)
 
     # -> input downsampled to 1/8
