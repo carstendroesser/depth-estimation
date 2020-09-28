@@ -19,28 +19,30 @@ def vgg_module(append_to):
 
 
 def densenet_bottleneck(append_to):
-        out = tf.keras.layers.BatchNormalization()(append_to)
-        out = tf.keras.layers.ReLU()(out)
-        out = tf.keras.layers.Conv2D(filters=128, kernel_size=1, strides=1)(out)
-        out = tf.keras.layers.Dropout(rate=0.2)(out)
-        out = tf.keras.layers.BatchNormalization()(out)
-        out = tf.keras.layers.ReLU()(out)
-        out = tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), strides=1, padding='same')(out)
-        return tf.keras.layers.Dropout(rate=0.2)(out)
+    out = tf.keras.layers.BatchNormalization()(append_to)
+    out = tf.keras.layers.ReLU()(out)
+    out = tf.keras.layers.Conv2D(filters=128, kernel_size=1, strides=1)(out)
+    # originally included, but removed because of no better performance
+    # out = tf.keras.layers.Dropout(rate=0.2)(out)
+    out = tf.keras.layers.BatchNormalization()(out)
+    out = tf.keras.layers.ReLU()(out)
+    return tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), strides=1, padding='same')(out)
+    # originally included, but removed because of no better performance
+    # return tf.keras.layers.Dropout(rate=0.2)(out)
 
 
 def densenet_transition(append_to, downsample):
     append_to = tf.keras.layers.BatchNormalization()(append_to)
     append_to = tf.keras.layers.ReLU()(append_to)
-    append_to = tf.keras.layers.Conv2D(filters=append_to.shape[-1]//2, kernel_size=(1, 1), strides=1, padding='same')(
+    append_to = tf.keras.layers.Conv2D(filters=append_to.shape[-1] // 2, kernel_size=(1, 1), strides=1, padding='same')(
         append_to)
-    append_to = tf.keras.layers.Dropout(rate=0.2)(append_to)
+    # originally included, but removed because of no better performance
+    # append_to = tf.keras.layers.Dropout(rate=0.2)(append_to)
 
     if downsample is True:
         return tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(append_to)
     else:
         return append_to
-
 
 
 def densenet_block(append_to, count_layers):
@@ -50,7 +52,7 @@ def densenet_block(append_to, count_layers):
     out = densenet_bottleneck(append_to=append_to)
     layers_to_concat.append(out)
 
-    for i in range(count_layers-1):
+    for i in range(count_layers - 1):
         out = tf.concat(layers_to_concat, axis=3)
         out = densenet_bottleneck(out)
         layers_to_concat.append(out)
@@ -65,25 +67,24 @@ def densenet_module(append_to):
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
     # removed to prevent too much downsampling
-    #encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
-    #encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
+    # encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
+    # encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
 
     # denseblock 1
     encoder = densenet_block(append_to=encoder, count_layers=6)
     encoder = densenet_transition(append_to=encoder, downsample=True)
 
-    #denseblock 2
+    # denseblock 2
     encoder = densenet_block(append_to=encoder, count_layers=12)
     encoder = densenet_transition(append_to=encoder, downsample=True)
 
-    #denseblock 3
+    # denseblock 3
     # depending on the depth of densenet, this densenet_block has another count of layers, e.g. 24
     # chosen 32 because of "go deep, not wide"
     encoder = densenet_block(append_to=encoder, count_layers=32)
     encoder = densenet_transition(append_to=encoder, downsample=False)
 
-    #-> input downsampled to 1/8
-
+    # -> input downsampled to 1/8
     return encoder
 
 
@@ -98,13 +99,12 @@ def create_resnet_block(append_to, filters, downsample=False):
     left = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), strides=stride, padding='same')(append_to)
     left = tf.keras.layers.BatchNormalization()(left)
     left = tf.keras.layers.ReLU()(left)
-
-
     left = tf.keras.layers.Conv2D(filters=filters, kernel_size=(3, 3), strides=1, padding='same')(left)
     left = tf.keras.layers.BatchNormalization()(left)
     left = tf.keras.layers.ReLU()(left)
 
-    append_to = tf.keras.layers.Conv2D(filters=filters, kernel_size=(identity_kernel_size, identity_kernel_size), strides=stride, padding='same')(append_to)
+    append_to = tf.keras.layers.Conv2D(filters=filters, kernel_size=(identity_kernel_size, identity_kernel_size),
+                                       strides=stride, padding='same')(append_to)
     append_to = tf.keras.layers.BatchNormalization()(append_to)
 
     output = tf.keras.layers.add([left, append_to])
@@ -120,8 +120,8 @@ def resnet_module(append_to):
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
     # left out to prevent from too much downsampling
-    #encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
-    #encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
+    # encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
+    # encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
 
     # block 1
     encoder = create_resnet_block(encoder, filters=64, downsample=True)
@@ -152,12 +152,12 @@ def asp_block(filtercount, kernel_size, rate, append_to, double_singled_conv):
     asp = tf.keras.layers.Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same')(asp)
     asp = tf.keras.layers.LeakyReLU()(asp)
     asp = tf.keras.layers.BatchNormalization()(asp)
-    asp = tf.keras.layers.Dropout(0.2)(asp)
+    # asp = tf.keras.layers.Dropout(0.2)(asp)
     if double_singled_conv:
         asp = tf.keras.layers.Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same')(asp)
         asp = tf.keras.layers.LeakyReLU()(asp)
         asp = tf.keras.layers.BatchNormalization()(asp)
-        asp = tf.keras.layers.Dropout(0.2)(asp)
+        # asp = tf.keras.layers.Dropout(0.2)(asp)
     return asp
 
 
