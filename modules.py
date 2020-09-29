@@ -186,10 +186,31 @@ def wasp_module(filters, dilation_rates, append_to):
 
 
 def ilp_module(append_to):
+    # bis inklusive NEW9 sah das ILP Modul so aus:
     # avg -> reshape -> 1x1 conv
-    ilp = tf.reduce_mean(append_to, axis=[1, 2])
-    ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))  # (x) -> (none, 1, 1, x), alternative: tf.stack
-    ilp = tf.keras.layers.Conv2D(ilp.shape[-1], kernel_size=1, strides=1, padding='same')(ilp)
+    #ilp = tf.reduce_mean(append_to, axis=[1, 2])
+    #ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))  # (x) -> (none, 1, 1, x), alternative: tf.stack
+    #ilp = tf.keras.layers.Conv2D(ilp.shape[-1], kernel_size=1, strides=1, padding='same')(ilp)
+
+    #ab inkl. Versuch 20 sieht ILP Modul so aus: (angelehnt an DORN)
+    print("input:", append_to.shape)
+    ilp = tf.keras.layers.AveragePooling2D(pool_size=(4, 4), strides=4, padding='same')(append_to)
+    print("avg output:", ilp.shape)
+    ilp = tf.keras.layers.Flatten()(ilp)
+    print("flatten output:", ilp.shape)
+    ilp = tf.keras.layers.Dense(units=256)(ilp)
+    print("dense output:", ilp.shape)
+    ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))
+    print("reshape output:", ilp.shape)
+    ilp = tf.keras.layers.Conv2D(filters=ilp.shape[3], kernel_size=1, strides=(1, 1))(ilp)
+    print("conv output:", ilp.shape)
+    ilp = tf.keras.layers.ReLU()(ilp)
+    print("relu output:", ilp.shape)
+    ilp = tf.keras.layers.BatchNormalization()(ilp)
+    print("batch output:", ilp.shape)
+    enlarge = tf.constant([1, append_to.shape[1], append_to.shape[2], 1])
+    ilp = tf.tile(ilp, enlarge)
+    print("tile output:", ilp.shape)
     return ilp
 
 
