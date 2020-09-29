@@ -32,9 +32,6 @@ def get_model(shape_input, base_encoder, multi_scale_extractor, dilation_rates, 
 
     # global features
     global_branch = ilp_module(append_to=encoder)
-    global_branch = upsampling(factor_h=shape_input[0] // 8, factor_w=shape_input[1] // 8,
-                               filtercount=global_branch.shape[-1] / 2,
-                               append_to=global_branch)
 
     if skip_connections == 'skipped':
         local_branch = layers.concatenate([encoder, local_branch])
