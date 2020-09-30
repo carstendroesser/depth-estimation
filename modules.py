@@ -101,13 +101,13 @@ def resnet_unit(append_to, filters, downsample=False):
         identity_kernel_size = 1
         stride = 1
 
-    left = tf.keras.layers.Conv2D(filters=filters[0], kernel_size=(1, 1), strides=1, padding='same')(append_to)
+    left = tf.keras.layers.Conv2D(filters=filters[0], kernel_size=(1, 1), strides=stride, padding='same')(append_to)
     left = tf.keras.layers.BatchNormalization()(left)
     left = tf.keras.layers.ReLU()(left)
     left = tf.keras.layers.Conv2D(filters=filters[0], kernel_size=(3, 3), strides=1, padding='same')(left)
     left = tf.keras.layers.BatchNormalization()(left)
     left = tf.keras.layers.ReLU()(left)
-    left = tf.keras.layers.Conv2D(filters=filters[1], kernel_size=(1, 1), strides=stride, padding='same')(left)
+    left = tf.keras.layers.Conv2D(filters=filters[1], kernel_size=(1, 1), strides=1, padding='same')(left)
     left = tf.keras.layers.BatchNormalization()(left)
     left = tf.keras.layers.ReLU()(left)
 
@@ -124,7 +124,11 @@ def resnet_unit(append_to, filters, downsample=False):
 
 def resnet_block(append_to, count_layers, filters, downsample):
     for i in range(count_layers):
-        append_to = resnet_unit(append_to=append_to, filters=filters, downsample=downsample)
+        if i == 0 and downsample is True:
+            downsample = True
+        else:
+            downsample = False
+        append_to = resnet_unit(append_to=append_to, filters=filters, downsample=(downsample))
 
     return append_to
 
@@ -144,8 +148,8 @@ def resnet_module(append_to):
     encoder = resnet_block(append_to=encoder, count_layers=3, filters=(64, 256), downsample=True)
     # block 2
     encoder = resnet_block(append_to=encoder, count_layers=4, filters=(128, 512), downsample=True)
-    # block 3: in resnet_151, the 3rd block has 23 layers. To have similar count of parameters, we reduced the
-    # count of layers in the 3rd block to 12 layers
+    # block 3: in resnet_151, the 3rd block has 23 layers. To have similar count of parameters in comparison with densenet,
+    # we experimentally reduce the count of layers in the 3rd block to 12 layers
     # see: https://pytorch.org/hub/pytorch_vision_resnet/
     encoder = resnet_block(append_to=encoder, count_layers=12, filters=(256, 1024), downsample=False)
 
