@@ -38,7 +38,6 @@ regularization = params[16]
 min_depth = float(params[17])
 
 # create model name out of params
-
 if CONTINUE_TRAINING:
     model_name = utils.concatenate_model_name(params) + '_continued'
 else:
@@ -74,7 +73,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
 # create checkpoint callback to auto-save weights
 path_checkpoint = model_name + "/cp-{epoch:04d}.ckpt"
-cb_checkpoint = callbacks.ModelCheckpoint(path_checkpoint, verbose=1, save_weights_only=True,
+cb_checkpoint = callbacks.ModelCheckpoint(filepath=path_checkpoint, verbose=1, save_weights_only=True,
                                           mode='auto', save_freq='epoch')
 
 # compile model
@@ -88,14 +87,14 @@ if CONTINUE_TRAINING:
     model.load_weights(path_ckpt)
 
 # plot model
-if not os.path.exists(model_name):
-    os.mkdir(model_name)
+if not os.path.exists(path=model_name):
+    os.mkdir(path=model_name)
 #   tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
 else:
     raise Exception("Path does already exist")
 
 # copy config-file
-shutil.copyfile('model.cfg', model_name + "/model.cfg")
+shutil.copyfile(src='model.cfg', dst=model_name + "/model.cfg")
 
 # start training
 history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count // batch_size,
