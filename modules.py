@@ -188,11 +188,11 @@ def wasp_module(filters, dilation_rates, append_to):
 def ilp_module(append_to):
     # bis inklusive NEW9 sah das ILP Modul so aus:
     # avg -> reshape -> 1x1 conv
-    #ilp = tf.reduce_mean(append_to, axis=[1, 2])
-    #ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))  # (x) -> (none, 1, 1, x), alternative: tf.stack
-    #ilp = tf.keras.layers.Conv2D(ilp.shape[-1], kernel_size=1, strides=1, padding='same')(ilp)
+    # ilp = tf.reduce_mean(append_to, axis=[1, 2])
+    # ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))  # (x) -> (none, 1, 1, x), alternative: tf.stack
+    # ilp = tf.keras.layers.Conv2D(ilp.shape[-1], kernel_size=1, strides=1, padding='same')(ilp)
 
-    #ab inkl. Versuch 20 sieht ILP Modul so aus: (angelehnt an DORN)
+    # ab inkl. Versuch 20 sieht ILP Modul so aus: (angelehnt an DORN)
     ilp = tf.keras.layers.AveragePooling2D(pool_size=(4, 4), strides=4, padding='same')(append_to)
     ilp = tf.keras.layers.Flatten()(ilp)
     ilp = tf.keras.layers.Dense(units=256)(ilp)
