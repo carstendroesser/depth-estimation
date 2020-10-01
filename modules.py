@@ -147,11 +147,11 @@ def resnet_module(append_to):
     # block 1
     encoder = resnet_block(append_to=encoder, count_layers=3, filters=(64, 256), downsample=True)
     # block 2
-    encoder = resnet_block(append_to=encoder, count_layers=4, filters=(128, 512), downsample=True)
-    # block 3: in resnet_151, the 3rd block has 23 layers. To have similar count of parameters in comparison with densenet,
-    # we experimentally reduce the count of layers in the 3rd block to 12 layers
+    encoder = resnet_block(append_to=encoder, count_layers=8, filters=(128, 512), downsample=True)
+    # block 3: in resnet_152, the 3rd block has 36 layers. To have similar count of parameters in comparison with densenet,
+    # we experimentally reduce the count of layers in the 3rd block to 30 layers and the last filtercount to 512
     # see: https://pytorch.org/hub/pytorch_vision_resnet/
-    encoder = resnet_block(append_to=encoder, count_layers=12, filters=(256, 1024), downsample=False)
+    encoder = resnet_block(append_to=encoder, count_layers=30, filters=(256, 512), downsample=False)
 
     return encoder
 
