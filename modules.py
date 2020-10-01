@@ -145,13 +145,13 @@ def resnet_module(append_to):
     # encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
 
     # block 1
-    encoder = resnet_block(append_to=encoder, count_layers=3, filters=(64, 256), downsample=True)
+    encoder = resnet_block(append_to=encoder, count_layers=3, filters=(64, 256), downsample=False)
     # block 2
     encoder = resnet_block(append_to=encoder, count_layers=8, filters=(128, 512), downsample=True)
     # block 3: in resnet_152, the 3rd block has 36 layers. To have similar count of parameters in comparison with densenet,
     # we experimentally reduce the count of layers in the 3rd block to 30 layers and the last filtercount to 512
     # see: https://pytorch.org/hub/pytorch_vision_resnet/
-    encoder = resnet_block(append_to=encoder, count_layers=30, filters=(256, 512), downsample=False)
+    encoder = resnet_block(append_to=encoder, count_layers=30, filters=(256, 512), downsample=True)
 
     return encoder
 
