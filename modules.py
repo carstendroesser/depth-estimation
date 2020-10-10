@@ -184,15 +184,26 @@ def aspp_module(filters, dilation_rates, append_to):
     return concatenated
 
 
+def wasp_block(filtercount, kernel_size, rate, append_to):
+    # parametrized
+    root = tf.keras.layers.Conv2D(filters=filtercount, kernel_size=kernel_size, strides=1, dilation_rate=rate,
+                                          padding='same')(append_to)
+
+    # fix
+    root = tf.keras.layers.Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same')(root)
+    root = tf.keras.layers.LeakyReLU()(root)
+    output = tf.keras.layers.BatchNormalization()(root)
+
+    return root, output
+
+
 def wasp_module(filters, dilation_rates, append_to):
-    wasp0 = asp_block(filtercount=filters, kernel_size=1, rate=1, append_to=append_to, double_singled_conv=True)
-    wasp1 = asp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[0], append_to=wasp0,
-                      double_singled_conv=True)
-    wasp2 = asp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[1], append_to=wasp1,
-                      double_singled_conv=True)
-    wasp3 = asp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[2], append_to=wasp2,
-                      double_singled_conv=True)
-    concatenated = tf.keras.layers.concatenate([wasp0, wasp1, wasp2, wasp3])
+    w0_start, w0_output = wasp_block(filtercount=filters, kernel_size=1, rate=1, append_to=append_to)
+    w1_start, w1_output = wasp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[0], append_to=w0_start)
+    w2_start, w2_output = wasp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[1], append_to=w1_start)
+    w3_output = wasp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[2], append_to=w2_start)[1]
+
+    concatenated = tf.keras.layers.concatenate([w0_output, w1_output, w2_output, w3_output])
     return concatenated
 
 
