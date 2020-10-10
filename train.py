@@ -16,11 +16,18 @@ from model import get_model
 # train from scratch oder continue training of an existing model?
 CONTINUE_TRAINING = False
 
+path_config = 'model.cfg'
+
+if CONTINUE_TRAINING:
+    path_config = filedialog.askopenfilename()
+    path_ckpt = filedialog.askopenfilename()
+    path_ckpt = "".join(os.path.splitext(path_ckpt)[:-1])
+
 # input password for email-updates
 mail_password = input("pw:")
 
 # read params out of config file
-params = read_config_file("model.cfg")
+params = read_config_file(path_config)
 shape_input = [int(params[0]), int(params[1]), int(params[2])]
 shape_depthmap = [int(params[0]), int(params[1]), 1]
 base_encoder = params[3]
@@ -81,9 +88,6 @@ model.compile(optimizer=optimizer, loss=loss_fn)
 
 # continue training?
 if CONTINUE_TRAINING:
-    path_config = filedialog.askopenfilename()
-    path_ckpt = filedialog.askopenfilename()
-    path_ckpt = "".join(os.path.splitext(path_ckpt)[:-1])
     model.load_weights(path_ckpt)
 
 # plot model
@@ -94,7 +98,7 @@ else:
     raise Exception("Path does already exist")
 
 # copy config-file
-shutil.copyfile(src='model.cfg', dst=model_name + "/model.cfg")
+shutil.copyfile(src=path_config, dst=model_name + "/model.cfg")
 
 # start training
 history = model.fit(x=train_dataset, epochs=epochs, steps_per_epoch=train_count // batch_size,
