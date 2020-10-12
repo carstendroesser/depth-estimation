@@ -122,9 +122,9 @@ for element in validation_dataset:
         axarr[3].axis('off')
 
         #figure.suptitle(model_name, fontsize=8)
-        #plt.savefig('{}/batched_comparison_{}_{}.png'.format(model_name, i, j), format='png', dpi=300)
+        plt.savefig('{}/plot_{}_{}.png'.format(model_name, i, j), format='png', dpi=300)
         plt.show(dpi=300)
-
+        input("Press key to continue...")
         j = j + 1
 
     if i < (validation_count // batch_size):
