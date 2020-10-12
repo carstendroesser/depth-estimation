@@ -15,6 +15,7 @@ from model import get_model
 
 # increase default dpi for plots
 mpl.rcParams['figure.dpi'] = 300
+mpl.rcParams['figure.figsize'] = 9, 2
 
 # ask for paths
 path_config = filedialog.askopenfilename()
@@ -67,7 +68,6 @@ validation_dataset, validation_count = get_dataset(images_path=images_path,
 # track time
 time_start = time.time()
 
-batches_to_plot = [12, 32, 62, 81]
 errors = []
 
 i = 0
@@ -75,41 +75,56 @@ j = 0
 
 for element in validation_dataset:
     print("Processing batch", str(i), "of", str(validation_count // batch_size))
-    predictions = model.predict(element[0], batch_size=batch_size)
+    predictions_inverted = model.predict(element[0], batch_size=batch_size)
 
     # prevent division by zero
-    predictions = max_depth / predictions
-    predictions = np.clip(predictions, min_depth, max_depth)
+    predictions_absolute = max_depth / predictions_inverted
+    predictions_absolute = np.clip(predictions_absolute, min_depth, max_depth)
+    predictions_inverted = np.clip(predictions_inverted, max_depth/max_depth, max_depth/min_depth)
 
-    y_truth = max_depth / element[1]
+    y_truth_inverted = element[1]
+    y_truth_absolute = max_depth / element[1]
 
     # crop
     images = utils.crop_center(element[0], (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
-    predictions = utils.crop_center(predictions, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
-    y_truth = utils.crop_center(y_truth, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    predictions_inverted = utils.crop_center(predictions_inverted, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    predictions_absolute = utils.crop_center(predictions_absolute, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    y_truth_inverted = utils.crop_center(y_truth_inverted, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
+    y_truth_absolute = utils.crop_center(y_truth_absolute, (shape_input[0] // 8) * 5, (shape_input[1] // 8) * 5)
 
-    errors.append(metrics(y_truth, predictions))
+    errors.append(metrics(y_truth_absolute, predictions_absolute))
 
-    if i in batches_to_plot:
-        figure, axarr = plt.subplots(batch_size, 3)
+    for image, pred_abs, gt_abs, pred_inv, gt_inv \
+            in zip(images, predictions_absolute, y_truth_absolute, predictions_inverted, y_truth_inverted):
+        figure, axarr = plt.subplots(1, 4)
 
-        axarr[0, 0].set_title('Image', fontdict={'fontsize': 8})
-        axarr[0, 1].set_title('Ground Truth', fontdict={'fontsize': 8})
-        axarr[0, 2].set_title('Predicted', fontdict={'fontsize': 8})
+        axarr[0].set_title('Image', fontdict={'fontsize': 8})
+        axarr[1].set_title('Ground Truth', fontdict={'fontsize': 8})
+        axarr[2].set_title('Predicted', fontdict={'fontsize': 8})
+        axarr[3].set_title('Error', fontdict={'fontsize': 8})
 
-        k = 0
-        for image, pred, gt in zip(images, predictions, y_truth):
-            axarr[k, 0].imshow(np.squeeze(image))
-            axarr[k, 0].axis('off')
-            axarr[k, 1].imshow(np.squeeze(gt), cmap='plasma', vmin=min_depth, vmax=max_depth)
-            axarr[k, 1].axis('off')
-            axarr[k, 2].imshow(np.squeeze(pred), cmap='plasma', vmin=min_depth, vmax=max_depth)
-            axarr[k, 2].axis('off')
-            k = k + 1
+        # set each pixel to the corresponding accuracy
+        thresholded = np.maximum((gt_abs / pred_abs), (pred_abs / gt_abs))
+        accuracy = ((thresholded < 1.25**3).astype(int)*3)-((thresholded < 1.25**2).astype(int))-((thresholded < 1.25).astype(int))
+        accuracy = np.stack((accuracy,) * 3, axis=-1)
+        accuracy[np.all(accuracy == (3, 3, 3), axis=-1)] = (255, 152, 0)
+        accuracy[np.all(accuracy == (2, 2, 2), axis=-1)] = (255, 193, 7)
+        accuracy[np.all(accuracy == (1, 1, 1), axis=-1)] = (255, 235, 59)
+        accuracy[np.all(accuracy == (0, 0, 0), axis=-1)] = (244, 67, 54)
 
-        figure.suptitle(model_name, fontsize=8)
-        plt.savefig('{}/batched_comparison_{}.png'.format(model_name, j), format='png', dpi=300)
+        axarr[0].imshow(np.squeeze(image))
+        axarr[0].axis('off')
+        axarr[1].imshow(np.squeeze(gt_inv), cmap='plasma', vmin=max_depth/max_depth, vmax=max_depth/min_depth)
+        axarr[1].axis('off')
+        axarr[2].imshow(np.squeeze(pred_inv), cmap='plasma', vmin=max_depth/max_depth, vmax=max_depth/min_depth)
+        axarr[2].axis('off')
+        axarr[3].imshow(np.squeeze(accuracy))
+        axarr[3].axis('off')
+
+        #figure.suptitle(model_name, fontsize=8)
+        #plt.savefig('{}/batched_comparison_{}_{}.png'.format(model_name, i, j), format='png', dpi=300)
         plt.show(dpi=300)
+
         j = j + 1
 
     if i < (validation_count // batch_size):
