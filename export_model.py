@@ -4,7 +4,7 @@ from tkinter import filedialog
 from config_reader import read_config_file
 from model import get_model
 
-
+# load config and checkpoint file. Chose a .index file!
 path_cfg = filedialog.askopenfilename()
 path_ckpt = filedialog.askopenfilename()
 path_ckpt = "".join(os.path.splitext(path_ckpt)[:-1])

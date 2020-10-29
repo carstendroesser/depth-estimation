@@ -80,7 +80,7 @@ for element in validation_dataset:
     # prevent division by zero
     predictions_absolute = max_depth / predictions_inverted
     predictions_absolute = np.clip(predictions_absolute, min_depth, max_depth)
-    predictions_inverted = np.clip(predictions_inverted, max_depth/max_depth, max_depth/min_depth)
+    predictions_inverted = np.clip(predictions_inverted, max_depth / max_depth, max_depth / min_depth)
 
     y_truth_inverted = element[1]
     y_truth_absolute = max_depth / element[1]
@@ -105,7 +105,8 @@ for element in validation_dataset:
 
         # set each pixel to the corresponding accuracy
         thresholded = np.maximum((gt_abs / pred_abs), (pred_abs / gt_abs))
-        accuracy = ((thresholded < 1.25**3).astype(int)*3)-((thresholded < 1.25**2).astype(int))-((thresholded < 1.25).astype(int))
+        accuracy = ((thresholded < 1.25 ** 3).astype(int) * 3) - ((thresholded < 1.25 ** 2).astype(int)) - (
+            (thresholded < 1.25).astype(int))
         accuracy = np.stack((accuracy,) * 3, axis=-1)
         accuracy[np.all(accuracy == (3, 3, 3), axis=-1)] = (255, 152, 0)
         accuracy[np.all(accuracy == (2, 2, 2), axis=-1)] = (255, 193, 7)
@@ -114,14 +115,14 @@ for element in validation_dataset:
 
         axarr[0].imshow(np.squeeze(image))
         axarr[0].axis('off')
-        axarr[1].imshow(np.squeeze(gt_inv), cmap='plasma', vmin=max_depth/max_depth, vmax=max_depth/min_depth)
+        axarr[1].imshow(np.squeeze(gt_inv), cmap='plasma', vmin=max_depth / max_depth, vmax=max_depth / min_depth)
         axarr[1].axis('off')
-        axarr[2].imshow(np.squeeze(pred_inv), cmap='plasma', vmin=max_depth/max_depth, vmax=max_depth/min_depth)
+        axarr[2].imshow(np.squeeze(pred_inv), cmap='plasma', vmin=max_depth / max_depth, vmax=max_depth / min_depth)
         axarr[2].axis('off')
         axarr[3].imshow(np.squeeze(accuracy))
         axarr[3].axis('off')
 
-        #figure.suptitle(model_name, fontsize=8)
+        # figure.suptitle(model_name, fontsize=8)
         plt.savefig('{}/plot_{}_{}.png'.format(model_name, i, j), format='png', dpi=300)
         plt.show(dpi=300)
         input("Press key to continue...")

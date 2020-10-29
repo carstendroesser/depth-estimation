@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def vgg_module(append_to):
-    # VGG16, without dense blocks -> 'VGG13'
+    # according to VGG16, but without dense blocks -> 'VGG13'
     vgg = vgg_unit(append_to=append_to, count_layers=2, kernel_sizes=(3, 3), filters=64, downsample=True)
     vgg = vgg_unit(append_to=vgg, count_layers=2, kernel_sizes=(3, 3), filters=128, downsample=True)
     vgg = vgg_unit(append_to=vgg, count_layers=3, kernel_sizes=(3, 3, 1), filters=256, downsample=True)
@@ -24,25 +24,21 @@ def vgg_unit(append_to, count_layers, kernel_sizes, filters, downsample):
 
 
 def densenet_unit(append_to):
+    # DropOut was removed because of no benefits
     out = tf.keras.layers.BatchNormalization()(append_to)
     out = tf.keras.layers.ReLU()(out)
     out = tf.keras.layers.Conv2D(filters=128, kernel_size=1, strides=1)(out)
-    # originally included, but removed because of no better performance
-    # out = tf.keras.layers.Dropout(rate=0.2)(out)
     out = tf.keras.layers.BatchNormalization()(out)
     out = tf.keras.layers.ReLU()(out)
     return tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3), strides=1, padding='same')(out)
-    # originally included, but removed because of no better performance
-    # return tf.keras.layers.Dropout(rate=0.2)(out)
 
 
 def densenet_transition(append_to, downsample):
+    # DropOut was removed because of no benefits
     append_to = tf.keras.layers.BatchNormalization()(append_to)
     append_to = tf.keras.layers.ReLU()(append_to)
     append_to = tf.keras.layers.Conv2D(filters=append_to.shape[-1] // 2, kernel_size=(1, 1), strides=1, padding='same')(
         append_to)
-    # originally included, but removed because of no better performance
-    # append_to = tf.keras.layers.Dropout(rate=0.2)(append_to)
 
     if downsample is True:
         return tf.keras.layers.AveragePooling2D(pool_size=(2, 2), strides=2)(append_to)
@@ -71,7 +67,8 @@ def densenet_module(append_to):
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=2)(encoder)
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
-    # removed to prevent too much downsampling
+
+    # removed to prevent too much downsampling in the beginning:
     # encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
     # encoder = tf.keras.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding='valid')(encoder)
 
@@ -84,8 +81,6 @@ def densenet_module(append_to):
     encoder = densenet_transition(append_to=encoder, downsample=True)
 
     # denseblock 3
-    # depending on the depth of densenet, this densenet_block has another count of layers, e.g. 24
-    # chosen 48 because of "go deep, not wide"
     encoder = densenet_block(append_to=encoder, count_layers=48)
     encoder = densenet_transition(append_to=encoder, downsample=False)
 
@@ -134,13 +129,13 @@ def resnet_block(append_to, count_layers, filters, downsample):
 
 
 def resnet_module(append_to):
-    # resnet 152
+    # according resnet-152
     # head
     encoder = tf.keras.layers.ZeroPadding2D(padding=(3, 3))(append_to)
     encoder = tf.keras.layers.Conv2D(filters=64, kernel_size=(7, 7), strides=(2, 2), padding='valid')(encoder)
     encoder = tf.keras.layers.BatchNormalization()(encoder)
     encoder = tf.keras.layers.ReLU()(encoder)
-    # left out to prevent from too much downsampling
+    # removed to prevent to much downsampling in the beginning
     # encoder = tf.keras.layers.ZeroPadding2D(padding=(1, 1))(encoder)
     # encoder = tf.keras.layers.MaxPooling2D(pool_size=3, strides=(2, 2), padding='valid')(encoder)
 
@@ -159,20 +154,23 @@ def resnet_module(append_to):
 def asp_block(filtercount, kernel_size, rate, append_to, double_singled_conv):
     asp = tf.keras.layers.Conv2D(filters=filtercount, kernel_size=kernel_size, strides=1, dilation_rate=rate,
                                  padding='same')(append_to)
-    # 1x1 to reduce param count and dimensionality
+    # 1x1 to reduce dimensionality and param count
     asp = tf.keras.layers.Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same')(asp)
     asp = tf.keras.layers.LeakyReLU()(asp)
     asp = tf.keras.layers.BatchNormalization()(asp)
+    # removed, because of no benefits:
     # asp = tf.keras.layers.Dropout(0.2)(asp)
     if double_singled_conv:
         asp = tf.keras.layers.Conv2D(filters=64, kernel_size=(1, 1), strides=1, padding='same')(asp)
         asp = tf.keras.layers.LeakyReLU()(asp)
         asp = tf.keras.layers.BatchNormalization()(asp)
+        # removed, because of no benefits:
         # asp = tf.keras.layers.Dropout(0.2)(asp)
     return asp
 
 
 def aspp_module(filters, dilation_rates, append_to):
+    # 3 branches ASPP module with 1x1 additional module
     aspp0 = asp_block(filtercount=filters, kernel_size=1, rate=1, append_to=append_to, double_singled_conv=False)
     aspp1 = asp_block(filtercount=filters, kernel_size=3, rate=dilation_rates[0], append_to=append_to,
                       double_singled_conv=False)
@@ -207,15 +205,10 @@ def wasp_module(filters, dilation_rates, append_to):
 
 
 def ilp_module(append_to):
-    # bis inklusive NEW9 sah das ILP Modul so aus:
-    # avg -> reshape -> 1x1 conv
-    # ilp = tf.reduce_mean(append_to, axis=[1, 2])
-    # ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))  # (x) -> (none, 1, 1, x), alternative: tf.stack
-    # ilp = tf.keras.layers.Conv2D(ilp.shape[-1], kernel_size=1, strides=1, padding='same')(ilp)
-
-    # ab inkl. Versuch 20 sieht ILP Modul so aus: (angelehnt an DORN)
+    # according to DORN's Full-Image-Encoder:
     ilp = tf.keras.layers.AveragePooling2D(pool_size=(4, 4), strides=4, padding='same')(append_to)
     ilp = tf.keras.layers.Flatten()(ilp)
+    # units were reduced to 256 (instead of 512)
     ilp = tf.keras.layers.Dense(units=256)(ilp)
     ilp = tf.reshape(ilp, (tf.shape(ilp)[0], 1, 1, ilp.shape[1]))
     ilp = tf.keras.layers.Conv2D(filters=ilp.shape[3], kernel_size=1, strides=(1, 1))(ilp)

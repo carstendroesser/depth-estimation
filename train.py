@@ -13,7 +13,7 @@ from dataset import get_dataset
 from losses import loss_fn
 from model import get_model
 
-# train from scratch oder continue training of an existing model?
+# train from scratch or continue training of an existing model?
 CONTINUE_TRAINING = False
 
 path_config = 'model.cfg'
@@ -75,7 +75,8 @@ model = get_model(shape_input=shape_input, base_encoder=base_encoder, multi_scal
 # create optimizer
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, amsgrad=True)
 
-# unused: create early-stopping callback to auto-detect overfitting
+# create early-stopping callback to auto-detect overfitting
+# removed because of undesired behavior
 # cb_early_stopping = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=2, mode='auto')
 
 # create checkpoint callback to auto-save weights
@@ -93,7 +94,8 @@ if CONTINUE_TRAINING:
 # plot model
 if not os.path.exists(path=model_name):
     os.mkdir(path=model_name)
-#   tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
+    # use on high-end machines only:
+    #tf.keras.utils.plot_model(model, model_name + '/model.png', show_shapes=True)
 else:
     raise Exception("Path does already exist")
 
